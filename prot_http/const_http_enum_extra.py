@@ -1,6 +1,6 @@
-from enum import StrEnum
+from enum import Enum
 
-class CmdEnumFileQuality(StrEnum):
+class CmdEnumFileQuality(str, Enum):
     Best = "Original"
     Medium = "MidThumb"
     Fast = "Thumbnail"

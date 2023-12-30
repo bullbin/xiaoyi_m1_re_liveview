@@ -1,6 +1,6 @@
-from enum import StrEnum
+from enum import Enum
 
-class YiHttpCmdId(StrEnum):
+class YiHttpCmdId(str, Enum):
     CMD_FILE_LIST               = "GetFileList"         # Done
     CMD_FILE_INFO               = "GetFileInfo"
     CMD_FILE_DELETE             = "DeleteFile"          # Done

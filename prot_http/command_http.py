@@ -1,7 +1,7 @@
 from __future__ import annotations
-from .constants.const_http_cmd import YiHttpCmdId
-from .constants.const_http_cmd_rc_params import *
-from .constants.const_http_enum_extra import *
+from .const_http_cmd import YiHttpCmdId
+from .const_http_cmd_rc_params import *
+from .const_http_enum_extra import *
 from typing import Dict, List
 
 class YiHttpCmd():
@@ -52,7 +52,7 @@ class CmdFileGet(YiHttpCmd):
         self.__quality = quality
     
     def to_json(self) -> Dict[str, str]:
-        return {"command":YiHttpCmdId.CMD_FILE_GET.value, "resulotion":self.__quality.value}
+        return {"command":YiHttpCmdId.CMD_FILE_GET.value, "path":self.__path, "resulotion":self.__quality.value}
 
 class CmdLiveViewStart(YiHttpCmd):
     def to_json(self) -> Dict[str, str]:

@@ -1,8 +1,9 @@
 import asyncio
 from bleak import BleakClient, BleakGATTCharacteristic, BleakScanner
 from random import randint
-from constants.const_ble_uuid import *
-from typing import List
+from .const_ble_uuid import *
+from typing import List, Tuple, Optional
+from traceback import print_exc
 from zlib import crc32
 
 def trim_byte_to_str(data : bytearray) -> str:
@@ -20,6 +21,9 @@ class YiBleConnectProtocol():
         self.__ble_model_number = ""
         self.__ble_key : str = ""
         self.__ble_token : str = ""
+
+        self.__ble_requires_f_uuid = False
+
         self.__ble_retrieve_successful = False
         self.__ble_key_negotiated = False
         self.__ble_session_started = False
@@ -42,6 +46,12 @@ class YiBleConnectProtocol():
 
         if not(client.is_connected):
             return
+        
+        for services in client.services:
+            for characteristic in services.characteristics:
+                if characteristic.uuid == UUID_CHAR_UNK_NOTIFY_F:
+                    self.__ble_requires_f_uuid = True
+                    break
 
         self.__ble_name         = trim_byte_to_str(await client.read_gatt_char(UUID_STD_DEVICE_NAME))
         self.__ble_manufacturer = trim_byte_to_str(await client.read_gatt_char(UUID_STD_DEVICE_MANUFACTURER))
@@ -72,6 +82,7 @@ class YiBleConnectProtocol():
         self.__ble_token = token
         self.__ble_key_negotiated = True
         self.__state_awaiting_pair = False
+
         print("\tPairing completed, token %s generated with key %s. Starting session..." % (token, self.__ble_key))
 
     async def do_pairing(self, client : BleakClient) -> bool:
@@ -94,21 +105,26 @@ class YiBleConnectProtocol():
         checksum = crc32(response)
         params = "%d,%s,%d" % (self.__ble_protocol, self.__ble_key, checksum)
         await client.write_gatt_char(UUID_CHAR_START_SESSION, params.encode('ascii'), response=True)
+        
+        if (self.__ble_requires_f_uuid):
+            await client.start_notify(UUID_CHAR_UNK_NOTIFY_F, self.__debug_on_extra_notify)
+            await client.start_notify(UUID_CHAR_UNK_NOTIFY_0, self.__debug_on_extra_notify)
+            await client.write_gatt_char(UUID_CHAR_RESUME_RELATED, '3'.encode('ascii'), response=True)
     
-    async def start_wifi_connect(self, client : BleakClient):
+    async def start_wifi_connect(self, client : BleakClient) -> Optional[Tuple[str,str]]:
         wlan_credentials = trim_byte_to_str(await client.read_gatt_char(UUID_CHAR_WIFI_AP_KEYSHARE)).split(",")
         if len(wlan_credentials) == 2:
             self.__wlanSsid = wlan_credentials[0]
             self.__wlanPwd = wlan_credentials[1]
-            await client.start_notify("41106daf-25ad-477b-a884-5038b6de4649", self.__debug_on_extra_notify)
-            # TODO - f characteristic means write a 3 key, but wifi initialises anyways
-            await client.start_notify("41106dae-25ad-477b-a884-5038b6de4649", self.__debug_on_extra_notify)
 
             print("Handshake authenticated. WLAN credentials extracted, SSID %s, passkey %s. Enabling Wi-Fi..." % (self.__wlanSsid, self.__wlanPwd))
             await client.write_gatt_char(UUID_CHAR_WIFI_SWITCH, "ON".encode('ascii'))
+            print("\tWi-Fi ready for connection. Handshake complete!")
 
-    def __str__(self):
-        return ' '.join([str(self.__ble_protocol), self.__firmware_lens, self.__firmware_body, str(self.__is_global_variant), self.__ble_name, self.__ble_manufacturer, self.__ble_model_number])
+            # TODO - ac,6, sync_time. Sleep to allow any other notifications to arrive
+            await asyncio.sleep(1.0)
+            return (self.__wlanSsid, self.__wlanPwd)
+        return None
 
     def busy(self):
         return self.__state_awaiting_pair
@@ -116,35 +132,69 @@ class YiBleConnectProtocol():
     def can_start_session(self):
         return self.__ble_key_negotiated and not(self.__ble_session_started)
 
-async def get_mac_address_cameras() -> List[str]:
-    scanner = BleakScanner(service_uuids=[UUID_SERVICE_M1])
-    devices = await scanner.discover(return_adv=True)
-    devices = [(d.address,a.rssi) for d,a in devices.values() if a.rssi >= -50]     # Filter on signal strength
-    devices = sorted(devices, key=lambda x: x[1], reverse=True)   # Sort by signal strength, highest is better
-    return [a for a,_r in devices]
+def get_mac_address_cameras() -> List[str]:
+    """Get MAC addresses of possible cameras.
 
-async def main():
+    Cameras are detected by whether the required Bluetooth LE main service is available. This may not be accurate.
 
-    addresses = await get_mac_address_cameras()
+    Returns:
+        List[str]: MAC addresses sorted by signal strength, descending.
+    """
 
-    if len(addresses) == 0:
-        print("Camera not in range.")
-        return
-    else:
-        print("Detected candidates", ", ".join(addresses) + ". Connecting to %s..." % addresses[0])
+    async def get_mac_address_cameras_internal() -> List[str]:
+        scanner = BleakScanner(service_uuids=[UUID_SERVICE_M1])
+        devices = await scanner.discover(return_adv=True)
+        devices = [(d.address,a.rssi) for d,a in devices.values() if a.rssi >= -50]     # Filter on signal strength
+        devices = sorted(devices, key=lambda x: x[1], reverse=True)   # Sort by signal strength, highest is better
+        return [a for a,_r in devices]
 
-    async with BleakClient(addresses[0]) as client:
-        debug = YiBleConnectProtocol()
-        await debug.retrieve_info(client)
-        await debug.do_pairing(client)
-        while debug.busy():
-            await asyncio.sleep(2.0)
+    return asyncio.run(get_mac_address_cameras_internal())
 
-        if debug.can_start_session():
-            await debug.do_session_start(client)
-            await debug.start_wifi_connect(client)
+def trigger_remote_control(mac_address_camera : str) -> Optional[Tuple[str,str]]:
+    """Connect and negotiate Wi-Fi keys with a camera at the specified MAC address.
 
-        await asyncio.sleep(8.0)
-        
+    Handshaking occurs over Bluetooth LE and emulates the pipeline in the final firmware and version of the Yi Mirrorless app. Pairing keys are randomized so limited interaction will be needed with the camera to complete the authentication. Connection is terminated once Wi-Fi is enabled.
+    
+    Not all components are emulated; time syncing is not applied and pairing is not wiped after connection.
 
-asyncio.run(main())
+    Args:
+        mac_address_camera (str): MAC address encoded as hex bytes with colon dividers.
+
+    Returns:
+        Optional[Tuple[str,str]]: (SSID, Passkey) if successful; None if not.
+    """
+
+    async def trigger_remote_control_internal(mac_address_camera : str) -> Optional[Tuple[str,str]]:
+        try:
+            async with BleakClient(mac_address_camera) as client:
+                debug = YiBleConnectProtocol()
+                await debug.retrieve_info(client)
+                await debug.do_pairing(client)      # TODO - If we have valid token, we skip pairing and start session immediately.
+                                                    #        The camera is capable of storing only one key. The app will warn you
+                                                    #        that the camera does not remember your device and needs to repair.
+                while debug.busy():
+                    await asyncio.sleep(2.0)
+
+                if debug.can_start_session():
+                    await debug.do_session_start(client)
+                    output = await debug.start_wifi_connect(client)
+                    return output
+                
+        except Exception as _e:
+            print("Communication error. Camera connection failed.")
+            print_exc()
+
+        return None
+    
+    return asyncio.run(trigger_remote_control_internal(mac_address_camera))
+
+def trigger_remote_control_closest() -> Optional[Tuple[str,str]]:
+    """Connect and negotiate Wi-Fi keys with the closest camera. This is a convenience function and is not robust.
+
+    Returns:
+        Optional[Tuple[str,str]]: (SSID, Passkey) if successful; None if not.
+    """
+    addresses = get_mac_address_cameras()
+    if len(addresses) > 0:
+        return trigger_remote_control(addresses[0])
+    return None

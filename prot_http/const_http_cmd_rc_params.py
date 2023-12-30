@@ -1,11 +1,11 @@
-from enum import StrEnum
+from enum import Enum
 
-class RcMeteringMode(StrEnum):
+class RcMeteringMode(str, Enum):
     Multi = "Multi"
     Spot = "Spot"
     CenterWeighted = "CenterWeighted"
 
-class RcExposureMode(StrEnum):
+class RcExposureMode(str, Enum):
     Auto = "Auto"
     Program = "P"
     AperturePriority = "A"
@@ -13,12 +13,12 @@ class RcExposureMode(StrEnum):
     Manual = "M"
     MasterGuide = "C"
 
-class RcFocusMode(StrEnum):
+class RcFocusMode(str, Enum):
     ContrastAutofocus = "C-AF"
     SingleAreaAutofocus = "S-AF"
     ManualFocus = "MF"
 
-class RcImageQuality(StrEnum):
+class RcImageQuality(str, Enum):
     MP50_Interpolated = "50"
     MP20 = "20"
     MP16 = "16"
@@ -26,13 +26,13 @@ class RcImageQuality(StrEnum):
     MP3 = "3"
     VGA = "VGA"
 
-class RcImageAspect(StrEnum):
+class RcImageAspect(str, Enum):
     A43 = "4:3"
     A32 = "3:2"
     Widescreen = "16:9"
     Square = "1:1"
 
-class RcFileFormat(StrEnum):
+class RcFileFormat(str, Enum):
     Raw = "RAW"
     JpegSmall = "JPG-S"
     JpegMedium = "JPG-M"
@@ -41,13 +41,13 @@ class RcFileFormat(StrEnum):
     RawAndJpegMedium = "RAWJ-M"
     RawAndJpegLarge = "RAWJ-L"
 
-class RcDriveMode(StrEnum):
+class RcDriveMode(str, Enum):
     Single = "Single"
     Continuous = "Continuous"
     Delay2 = "2SDelay"
     Delay10 = "10SDelay"
 
-class RcFStop(StrEnum):
+class RcFStop(str, Enum):
     F1p0 = "1.0"
     F1p2 = "1.2"
     F1p4 = "1.4"
@@ -79,7 +79,7 @@ class RcFStop(StrEnum):
     F29 = "29"
     F32 = "32"
 
-class RcIso(StrEnum):
+class RcIso(str, Enum):
     Auto = "Auto"
     I100 = "100"
     I200 = "200"
@@ -91,7 +91,7 @@ class RcIso(StrEnum):
     I12800 = "12800"
     I25600 = "25600"
 
-class RcWhiteBalance(StrEnum):
+class RcWhiteBalance(str, Enum):
     Auto = "Auto"
     Sunny = "Sunny"
     Cloudy = "Cloudy"
@@ -153,7 +153,7 @@ class RcWhiteBalance(StrEnum):
     K11000 = "11000"
     K11500 = "11500"
 
-class RcShutterSpeed(StrEnum):
+class RcShutterSpeed(str, Enum):
     Time = "TIME"
     Bulb = "BULB"
     S60 = "60s"
@@ -212,14 +212,14 @@ class RcShutterSpeed(StrEnum):
     SF3200 = "1/3200s"
     SF4000 = "1/4000s"
 
-class RcColorStyle(StrEnum):
+class RcColorStyle(str, Enum):
     Standard = "Standard"
     Portrait = "Portrait"
     Vivid = "Vivid"
     NaturalBW = "NaturalBW"
     HighContrastBW = "HContrastBW"
 
-class RcEvOffset(StrEnum):
+class RcEvOffset(str, Enum):
     N5p0 = "-5.0"
     N4p7 = "-4.7"
     N4p3 = "-4.3"
