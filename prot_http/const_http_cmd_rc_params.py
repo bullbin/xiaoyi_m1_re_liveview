@@ -1,5 +1,11 @@
 from enum import Enum
 
+class RcLensStatus(str, Enum):
+    Disconnected = "0"
+    Automatic = "1"
+    Manual = "2"
+    Unknown = "3"
+
 class RcMeteringMode(str, Enum):
     Multi = "Multi"
     Spot = "Spot"
