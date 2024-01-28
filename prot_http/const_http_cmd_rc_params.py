@@ -20,8 +20,8 @@ class RcExposureMode(str, Enum):
     MasterGuide = "C"
 
 class RcFocusMode(str, Enum):
-    ContrastAutofocus = "C-AF"
-    SingleAreaAutofocus = "S-AF"
+    AutofocusContinuous = "C-AF"
+    AutofocusStatic = "S-AF"
     ManualFocus = "MF"
 
 class RcImageQuality(str, Enum):

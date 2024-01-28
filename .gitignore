@@ -1,3 +1,4 @@
 packet_*
+nopush_*
 *.pyc
 *.raw
