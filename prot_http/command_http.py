@@ -2,7 +2,7 @@ from __future__ import annotations
 from .const_http_cmd import YiHttpCmdId
 from .const_http_cmd_rc_params import *
 from .const_http_enum_extra import *
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 class YiHttpCmd():
     @staticmethod
@@ -53,10 +53,6 @@ class CmdFileGet(YiHttpCmd):
     
     def to_json(self) -> Dict[str, str]:
         return {"command":YiHttpCmdId.CMD_FILE_GET.value, "path":self.__path, "resulotion":self.__quality.value}
-
-class CmdLiveViewStart(YiHttpCmd):
-    def to_json(self) -> Dict[str, str]:
-        return {"command":YiHttpCmdId.CMD_LIVE_VIEW_START.value}
 
 class RcCmdSetCameraMode(YiHttpCmd):
     def __init__(self, mode : RcExposureMode):
@@ -166,6 +162,17 @@ class RcCmdSetIso(YiHttpCmd):
     
     def to_json(self) -> Dict[str, str]:
         return {"command":YiHttpCmdId.CMD_RC_SET_ISO.value, "ISO":self.__iso.value}
+
+class RcCmdTriggerFocus(YiHttpCmd):
+    def __init__(self, trigger_mode : RcTriggerFocusMode, screen_pos : Tuple[int, int] = (0,0)):
+        super().__init__()
+        self.__mode = trigger_mode
+        self.__pos = screen_pos
+
+    def to_json(self) -> Dict[str, str]:
+        if self.__mode == RcTriggerFocusMode.Auto:
+            return {"command":YiHttpCmdId.CMD_RC_FOCUS.value, "Mode":self.__mode.value}
+        return {"command":YiHttpCmdId.CMD_RC_FOCUS.value, "Mode":self.__mode.value, "Posx":str(self.__pos[0]), "Posy":str(self.__pos[1])}
 
 class RcCmdShootPhoto(YiHttpCmd):
     def to_json(self) -> Dict[str, str]:

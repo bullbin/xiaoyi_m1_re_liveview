@@ -24,6 +24,10 @@ class RcFocusMode(str, Enum):
     SingleAreaAutofocus = "S-AF"
     ManualFocus = "MF"
 
+class RcTriggerFocusMode(str, Enum):
+    Auto = "Auto"
+    Manual = "Manual"
+
 class RcImageQuality(str, Enum):
     MP50_Interpolated = "50"
     MP20 = "20"

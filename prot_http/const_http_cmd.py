@@ -17,11 +17,9 @@ class YiHttpCmdId(str, Enum):
     CMD_MASTERGUIDE_DELETE      = "DeleteMLFile"
     CMD_MASTERGUIDE_UPLOAD      = "UploadML"
 
-    CMD_LIVE_VIEW_START         = "StartLiveview"       # Done
     CMD_RC_START                = "RCStartRemoteCtl"    # Done
     CMD_RC_STOP                 = "RCStopRemoteCtl"     # Done
 
-    CMD_RC_GET_CAMERA_CONFIG    = "RCGetCameraCfg"
     CMD_RC_SET_EXPOSURE_MODE    = "RCSwitchDialMode"    # Done
     CMD_RC_SET_METERING_MODE    = "RCMeteringModeSet"   # Done
     CMD_RC_SET_FOCUS_MODE       = "RCFocusModeSet"      # Done
@@ -38,6 +36,6 @@ class YiHttpCmdId(str, Enum):
     CMD_RC_ADJUST_MF            = "RCMFAdjust"
     CMD_RC_DELAY_SHOOT_COUNT    = "RCDShootCntSet"
 
-    CMD_RC_FOCUS                = "RCDoFocus"
+    CMD_RC_FOCUS                = "RCDoFocus"           # Done
     CMD_RC_SHOOT                = "RCDoShooting"        # Done
     
